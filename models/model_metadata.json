@@ -1,0 +1,27 @@
+{
+  "models": {
+    "knn": {
+      "performance": {
+        "accuracy": 0.75
+      }
+    },
+    "rf": {
+      "performance": {
+        "accuracy": 0.78125
+      }
+    }
+  },
+  "feature_names": [
+    "aff_dom",
+    "moy_sci",
+    "moy_ann",
+    "sect_parent",
+    "part_act",
+    "acc_empl"
+  ],
+  "target_mapping": {
+    "0": "Agronomie",
+    "1": "Informatique",
+    "2": "M\u00e9decine"
+  }
+}
