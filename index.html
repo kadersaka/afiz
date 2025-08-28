@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système de Recommandation Académique</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1rem;
+        }
+
+        .help-text {
+            font-size: 0.9rem;
+            color: #777;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            background-color: white;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .recommendation-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .recommendation-badge {
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .badge-informatique {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+        }
+
+        .badge-medecine {
+            background: linear-gradient(135deg, #dc2626, #ea580c);
+            color: white;
+        }
+
+        .badge-agronomie {
+            background: linear-gradient(135deg, #16a34a, #65a30d);
+            color: white;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #fbbf24, #10b981);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .probabilities {
+            margin: 25px 0;
+        }
+
+        .probability-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .probability-bar {
+            width: 200px;
+            height: 10px;
+            background-color: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-left: 15px;
+        }
+
+        .probability-fill {
+            height: 100%;
+            background-color: #667eea;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .explanation {
+            background-color: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .model-agreement {
+            display: flex;
+            justify-content: space-around;
+            margin: 25px 0;
+        }
+
+        .model-result {
+            text-align: center;
+            padding: 15px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            flex: 1;
+            margin: 0 10px;
+        }
+
+        .model-name {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .model-prediction {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .error {
+            background-color: #fee2e2;
+            border-left: 4px solid #dc2626;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #6b7280, #374151);
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-counter {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .model-agreement {
+                flex-direction: column;
+            }
+            
+            .model-result {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Système de Recommandation Académique</h1>
+            <p>Découvrez la filière qui vous correspond le mieux</p>
+        </div>
+
+        <!-- Formulaire -->
+        <div id="questionnaire" class="card">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <div id="question-counter" class="question-counter">Question 0 sur 6</div>
+            
+            <form id="academicForm">
+                <div class="form-group">
+                    <label for="aff_dom">Avec quel domaine avez-vous des affinités ?</label>
+                    <div class="help-text">Choisissez le domaine qui vous attire le plus professionnellement.</div>
+                    <select id="aff_dom" name="aff_dom" required>
+                        <option value="">-- Sélectionnez --</option>
+                        <option value="Domaine Industriel">Domaine Industriel</option>
+                        <option value="Domaine de l'agronomie">Domaine de l'agronomie</option>
+                        <option value="Domaine de la santé">Domaine de la santé</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="moy_sci">Dans quel intervalle se situent vos moyennes en sciences ?</label>
+                    <div class="help-text">Moyennes en mathématiques, sciences physiques, SVT, informatique.</div>
+                    <select id="moy_sci" name="moy_sci" required>
+                        <option value="">-- Sélectionnez --</option>
+                        <option value="<10/20">Moins de 10/20</option>
+                        <option value="Entre 10/20 et 15/20">Entre 10/20 et 15/20</option>
+                        <option value=">15/20">Plus de 15/20</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="moy_ann">Dans quel intervalle se situent vos moyennes annuelles ?</label>
+                    <div class="help-text">Moyennes générales sur l'ensemble de vos années lycée (2nde à Terminale).</div>
+                    <select id="moy_ann" name="moy_ann" required>
+                        <option value="">-- Sélectionnez --</option>
+                        <option value="<10/20">Moins de 10/20</option>
+                        <option value="Entre 10/20 et 15/20">Entre 10/20 et 15/20</option>
+                        <option value=">15/20">Plus de 15/20</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="sect_parent">Dans quel secteur avez-vous des proches exerçant un métier ?</label>
+                    <div class="help-text">Secteur professionnel de vos parents, amis ou proches.</div>
+                    <select id="sect_parent" name="sect_parent" required>
+                        <option value="">-- Sélectionnez --</option>
+                        <option value="Secteur agricol">Secteur agricole</option>
+                        <option value="Secteur de la santé">Secteur de la santé</option>
+                        <option value="Secteur industriel">Secteur industriel</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="part_act">Dans quel domaine avez-vous participé à des activités ?</label>
+                    <div class="help-text">Activités auxquelles vous avez participé ou que vous avez menées.</div>
+                    <select id="part_act" name="part_act" required>
+                        <option value="">-- Sélectionnez --</option>
+                        <option value="Domaine agricol">Domaine agricole</option>
+                        <option value="Domaine de la santé">Domaine de la santé</option>
+                        <option value="Domaine industriel">Domaine industriel</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="acc_empl">Quel secteur offre la meilleure accessibilité au marché de l'emploi ?</label>
+                    <div class="help-text">Selon vous, quel secteur offre le plus d'opportunités d'emploi.</div>
+                    <select id="acc_empl" name="acc_empl" required>
+                        <option value="">-- Sélectionnez --</option>
+                        <option value="Secteur agricol">Secteur agricole</option>
+                        <option value="Secteur de la santé">Secteur de la santé</option>
+                        <option value="Secteur industriel">Secteur industriel</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">
+                    Obtenir ma recommandation
+                </button>
+            </form>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="card loading">
+            <div class="loading-spinner"></div>
+            <h3>Analyse de votre profil en cours...</h3>
+            <p>Nos modèles d'intelligence artificielle analysent vos réponses</p>
+        </div>
+
+        <!-- Résultats -->
+        <div id="results" class="card results">
+            <div class="recommendation-header">
+                <div id="recommendationBadge" class="recommendation-badge">Informatique</div>
+                <h3>Filière recommandée pour vous</h3>
+                <div>Niveau de confiance : <span id="confidenceText">90%</span></div>
+                <div class="confidence-bar">
+                    <div id="confidenceFill" class="confidence-fill" style="width: 90%"></div>
+                </div>
+            </div>
+
+            <div class="model-agreement">
+                <div class="model-result">
+                    <div class="model-name">Modèle KNN</div>
+                    <div id="knnPrediction" class="model-prediction">Informatique</div>
+                </div>
+                <div class="model-result">
+                    <div class="model-name">Modèle Random Forest</div>
+                    <div id="rfPrediction" class="model-prediction">Informatique</div>
+                </div>
+            </div>
+
+            <div class="probabilities">
+                <h4>Probabilités détaillées :</h4>
+                <div id="probabilityList">
+                    <!-- Probabilités générées dynamiquement -->
+                </div>
+            </div>
+
+            <div id="explanation" class="explanation">
+                <h4>Explication :</h4>
+                <p>Votre profil sera analysé ici...</p>
+            </div>
+
+            <button class="btn restart-btn" onclick="restartTest()">
+                Refaire le test
+            </button>
+        </div>
+
+        <!-- Erreurs -->
+        <div id="errorMessage" class="error">
+            <h4>Une erreur s'est produite</h4>
+            <p id="errorText">Message d'erreur...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:5001';
+        const form = document.getElementById('academicForm');
+        const selects = document.querySelectorAll('select');
+
+        // Suivi de la progression
+        function updateProgress() {
+            const filledSelects = Array.from(selects).filter(select => select.value !== '');
+            const progress = (filledSelects.length / selects.length) * 100;
+            
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('question-counter').textContent = 
+                `Question ${filledSelects.length} sur ${selects.length}`;
+        }
+
+        // Écouter les changements sur les selects
+        selects.forEach(select => {
+            select.addEventListener('change', updateProgress);
+        });
+
+        // Soumission du formulaire
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Collecter les données
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            
+            // Validation côté client
+            if (!validateForm(data)) {
+                return;
+            }
+
+            // Afficher le loading
+            showLoading();
+
+            try {
+                // Appel API
+                const response = await fetch(`${API_BASE_URL}/api/recommend`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    displayResults(result.recommendation);
+                } else {
+                    showError(result.message || 'Erreur lors de la recommandation');
+                }
+            } catch (error) {
+                showError('Impossible de se connecter au serveur. Vérifiez que l\'API Flask est démarrée.');
+            }
+        });
+
+        function validateForm(data) {
+            const requiredFields = ['aff_dom', 'moy_sci', 'moy_ann', 'sect_parent', 'part_act', 'acc_empl'];
+            const missingFields = requiredFields.filter(field => !data[field]);
+            
+            if (missingFields.length > 0) {
+                showError(`Veuillez remplir tous les champs obligatoires.`);
+                return false;
+            }
+            return true;
+        }
+
+        function showLoading() {
+            document.getElementById('questionnaire').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function displayResults(recommendation) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+            
+            // Badge de recommandation
+            const badge = document.getElementById('recommendationBadge');
+            badge.textContent = recommendation.final_recommendation;
+            badge.className = `recommendation-badge badge-${recommendation.final_recommendation.toLowerCase()}`;
+            
+            // Niveau de confiance
+            const confidence = Math.round(recommendation.confidence * 100);
+            document.getElementById('confidenceText').textContent = confidence + '%';
+            document.getElementById('confidenceFill').style.width = confidence + '%';
+            
+            // Prédictions des modèles
+            document.getElementById('knnPrediction').textContent = recommendation.knn_prediction;
+            document.getElementById('rfPrediction').textContent = recommendation.rf_prediction;
+            
+            // Probabilités
+            displayProbabilities(recommendation.probabilities);
+            
+            // Explication
+            document.getElementById('explanation').innerHTML = `
+                <h4>Explication :</h4>
+                <p>${recommendation.explanation}</p>
+            `;
+        }
+
+        function displayProbabilities(probabilities) {
+            const container = document.getElementById('probabilityList');
+            container.innerHTML = '';
+            
+            Object.entries(probabilities).forEach(([filiere, prob]) => {
+                const percentage = Math.round(prob * 100);
+                const item = document.createElement('div');
+                item.className = 'probability-item';
+                item.innerHTML = `
+                    <span><strong>${filiere}</strong></span>
+                    <span>${percentage}%</span>
+                    <div class="probability-bar">
+                        <div class="probability-fill" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        function restartTest() {
+            // Réinitialiser le formulaire
+            form.reset();
+            updateProgress();
+            
+            // Afficher le questionnaire
+            document.getElementById('questionnaire').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // Scroll vers le haut
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Test de connexion API au chargement
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/health`);
+                if (!response.ok) {
+                    console.warn('API Flask non disponible');
+                }
+            } catch (error) {
+                console.warn('Impossible de se connecter à l\'API Flask');
+            }
+        });
+
+        // Initialisation
+        updateProgress();
+    </script>
+</body>
+</html>
